@@ -1,0 +1,33 @@
+# --extra-index-url https://download.openmmlab.com/mmcv/dist/cu122/torch2.1.0/index.html
+# https://download.openmmlab.com/mmcv/dist/cu122/torch2.1.0/mmcv-2.2.0-cp310-cp310-manylinux1_x86_64.whl
+
+scikit-image
+scipy
+scikit-learn
+smplx==0.1.28
+tqdm
+yacs
+numba
+opencv-python
+tensorboardx
+filterpy
+cython
+chumpy
+Pillow
+trimesh
+pyrender
+matplotlib
+json_tricks
+torchgeometry
+einops
+joblib
+boto3
+requests
+easydict
+pycocotools
+plyfile
+timm
+pyglet
+mmcv==2.1.0
+mmdet==3.2.0
+eval_type_backport

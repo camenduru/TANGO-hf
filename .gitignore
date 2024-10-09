@@ -1,0 +1,20 @@
+# Ignore any file with '_local' in its name
+*_local.*
+
+# Ignore specific files and directories
+datasets/cached_data/
+datasets/outputs/
+saved_audio.wav
+result.avi
+test.mp4
+**/.ipynb_checkpoints/
+**/__pycache__/
+outputs/
+
+# Ignore specific files in youtube_test folder
+datasets/cached_graph/youtube_test/speaker0.pkl
+datasets/cached_graph/youtube_test/speaker2.pkl
+datasets/cached_graph/youtube_test/speaker3.pkl
+datasets/cached_graph/youtube_test/speaker4.pkl
+datasets/cached_graph/youtube_test/speaker5.pkl
+datasets/cached_graph/youtube_test/speaker6.pkl

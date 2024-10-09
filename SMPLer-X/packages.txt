@@ -1,0 +1,13 @@
+libglfw3-dev
+libgles2-mesa-dev
+libgl1
+freeglut3-dev
+zip
+unzip
+ffmpeg 
+libsm6 
+libxext6
+libgl1-mesa-dri
+libegl1-mesa
+libgbm1
+build-essential

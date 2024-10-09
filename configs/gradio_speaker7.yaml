@@ -1,0 +1,77 @@
+wandb_project: 'TANGO'
+exp_name: 'debug'
+
+wandb_entity: ''
+wandb_key: ""
+wandb_log_dir: '/content/outputs/wandb'
+output_dir: ./outputs/
+log_period: 1
+seed: 42
+
+data:
+  name_pyfile: "datasets.beat2_v5"
+  class_name: "BEAT2Dataset"
+  train_bs: 2
+  meta_paths:
+    - "./datasets/data_json/show-oliver-s40_w128.json"
+  # test_meta_paths: "./datasets/data_json/show_oliver_test/Abortion_Laws_-_Last_Week_Tonight_with_John_Oliver_HBO-DRauXXz6t0Y.webm.json"
+  "test_meta_paths": "./datasets/data_json/youtube_test/speaker7.json"
+  pose_norm: False
+  pose_fps: 30
+  rot6d: True
+  pose_dims: 825
+  pose_length: 128
+  stride: 20
+  test_length: 128
+  audio_sr: 16000
+  audio_fps: 16000
+
+model:
+  name_pyfile: "models.jointembedding_high_env0"
+  class_name: "JointEmbedding"
+  motion_f: 256
+  audio_rep: wave16k
+  audio_sr: 16000
+  audio_fps: 16000
+  audio_norm: False
+  audio_f: 256
+  word_rep: textgrid
+  word_index_num: 11195
+  word_dims: 300
+  facial_rep: smplxflame_30
+  facial_dims: 100
+  facial_norm: False
+  facial_f: 0
+  f_pre_encoder: null
+  f_encoder: null
+  f_fix_pre: False
+  id_rep: onehot
+  speaker_f: 0
+  hidden_size: 512
+  n_layer: 1
+  motion_dim: 825
+ 
+validation:
+  val_loss_steps: 1
+  validation_steps: 1000
+  # guidance_scale: 3.5
+  # denoising_steps: 20 
+
+solver:
+  gradient_accumulation_steps: 1
+  # mixed_precision: 'fp16'
+  # enable_xformers_memory_efficient_attention: True 
+  gradient_checkpointing: False 
+  max_train_steps: 5000000
+  max_grad_norm: 1.0
+  # lr
+  learning_rate: 2e-5
+  scale_lr: False 
+  lr_warmup_steps: 50
+  lr_scheduler: 'constant'
+  # optimizer
+  use_8bit_adam: False 
+  adam_beta1: 0.9
+  adam_beta2: 0.999
+  adam_weight_decay:  1.0e-2
+  adam_epsilon: 1.0e-8
