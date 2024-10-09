@@ -474,7 +474,7 @@ character_name_to_yaml = {
   "101099-00_18_09-00_18_19.mp4": "./configs/gradio.yaml",
 }
 
-@spaces.GPU(duration=200) 
+@spaces.GPU(duration=1000) 
 def tango(audio_path, character_name, create_graph=False, video_folder_path=None):
     saved_audio_path = "./saved_audio.wav"
     sample_rate, audio_waveform = audio_path 
