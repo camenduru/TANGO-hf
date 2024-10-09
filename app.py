@@ -467,12 +467,38 @@ def save_first_20_seconds(video_path, output_path="./save_video.mp4"):
 
 
 character_name_to_yaml = {
-  "speaker8_jjRWaMCWs44_00-00-30.16_00-00-33.32.mp4": "./configs/gradio_speaker8.yaml",
-  "speaker7_iuYlGRnC7J8_00-00-0.00_00-00-3.25.mp4": "./configs/gradio_speaker7.yaml",
-  "speaker9_o7Ik1OB4TaE_00-00-38.15_00-00-42.33.mp4": "./configs/gradio_speaker9.yaml",
-  "1wrQ6Msp7wM_00-00-39.69_00-00-45.68.mp4": "./configs/gradio_speaker1.yaml",
-  "101099-00_18_09-00_18_19.mp4": "./configs/gradio.yaml",
+  "speaker8_jjRWaMCWs44_00-00-30.16_00-00-33.32.mp4": "./datasets/data_json/youtube_test/speaker8.json",
+  "speaker7_iuYlGRnC7J8_00-00-0.00_00-00-3.25.mp4": "./datasets/data_json/youtube_test/speaker7.json",
+  "speaker9_o7Ik1OB4TaE_00-00-38.15_00-00-42.33.mp4": "./datasets/data_json/youtube_test/speaker9.json",
+  "1wrQ6Msp7wM_00-00-39.69_00-00-45.68.mp4": "./datasets/data_json/youtube_test/speaker1.json",
+  "101099-00_18_09-00_18_19.mp4": "./datasets/data_json/show_oliver_test/Stupid_Watergate_-_Last_Week_Tonight_with_John_Oliver_HBO-FVFdsl29s_Q.mkv.json",
 }
+
+cfg = prepare_all("./configs/gradio.yaml")
+seed_everything(cfg.seed)
+experiment_ckpt_dir = experiment_log_dir = os.path.join(cfg.output_dir, cfg.exp_name)
+
+smplx_model = smplx.create(
+        "./emage/smplx_models/", 
+        model_type='smplx',
+        gender='NEUTRAL_2020', 
+        use_face_contour=False,
+        num_betas=300,
+        num_expression_coeffs=100, 
+        ext='npz',
+        use_pca=False,
+    )
+model = init_class(cfg.model.name_pyfile, cfg.model.class_name, cfg)
+for param in model.parameters():
+    param.requires_grad = False
+model.smplx_model = smplx_model
+model.get_motion_reps = get_motion_reps_tensor
+
+checkpoint_path = "./datasets/cached_ckpts/ckpt.pth"
+checkpoint = torch.load(checkpoint_path)
+state_dict = checkpoint['model_state_dict']
+# new_state_dict = {k.replace('module.', ''): v for k, v in state_dict.items()}
+model.load_state_dict(state_dict, strict=False)
 
 @spaces.GPU(duration=1000) 
 def tango(audio_path, character_name, create_graph=False, video_folder_path=None):
@@ -488,10 +514,10 @@ def tango(audio_path, character_name, create_graph=False, video_folder_path=None
     sf.write(saved_audio_path, resampled_audio, 16000)
     audio_path = saved_audio_path
     
-    yaml_name = character_name_to_yaml.get(character_name.split("/")[-1], "./configs/gradio.yaml")
+    yaml_name = character_name_to_yaml.get(character_name.split("/")[-1], "./datasets/data_json/youtube_test/speaker1.json")
+    cfg.data.test_meta_paths = yaml_name
     print(yaml_name, character_name.split("/")[-1])
-    cfg = prepare_all(yaml_name)
-    
+
     if character_name.split("/")[-1] not in character_name_to_yaml.keys():
         create_graph=True
         # load video, and save it to "./save_video.mp4 for the first 20s of the video."
@@ -510,34 +536,11 @@ def tango(audio_path, character_name, create_graph=False, video_folder_path=None
     local_rank = 0  
     torch.cuda.set_device(local_rank)
     device = torch.device("cuda", local_rank)
-    seed_everything(cfg.seed)
-
-    experiment_ckpt_dir = experiment_log_dir = os.path.join(cfg.output_dir, cfg.exp_name)
-    smplx_model = smplx.create(
-            "./emage/smplx_models/", 
-            model_type='smplx',
-            gender='NEUTRAL_2020', 
-            use_face_contour=False,
-            num_betas=300,
-            num_expression_coeffs=100, 
-            ext='npz',
-            use_pca=False,
-        ).to(device).eval()
-    model = init_class(cfg.model.name_pyfile, cfg.model.class_name, cfg).to(device)
-    for param in model.parameters():
-        param.requires_grad = True
-    # freeze wav2vec2
-    for param in model.audio_encoder.parameters():
-        param.requires_grad = False
-    model.smplx_model = smplx_model
-    model.get_motion_reps = get_motion_reps_tensor
-
-    checkpoint_path = "./datasets/cached_ckpts/ckpt.pth"
-    checkpoint = torch.load(checkpoint_path)
-    state_dict = checkpoint['model_state_dict']
-    new_state_dict = {k.replace('module.', ''): v for k, v in state_dict.items()}
-    model.load_state_dict(new_state_dict, strict=False)
-
+    
+    smplx_model = smplx_model.to(device).eval()
+    model = model.to(device)
+    model.smplx_model = model.smplx_model.to(device)
+    
     test_path = os.path.join(experiment_ckpt_dir, f"test_{0}")
     os.makedirs(test_path, exist_ok=True)
     result = test_fn(model, device, 0, cfg.data.test_meta_paths, test_path, cfg, audio_path)
@@ -632,7 +635,7 @@ def make_demo():
                     inputs=[audio_input],
                     outputs=[video_output_1, video_output_2, file_output_1, file_output_2],
                     label="Select existing Audio examples",
-                    cache_examples=False
+                    cache_examples=True
                 )
             with gr.Column(scale=1):
                 video_input = gr.Video(label="Your Character", elem_classes="video")
@@ -642,7 +645,7 @@ def make_demo():
                     inputs=[video_input],  # Correctly refer to video input
                     outputs=[video_output_1, video_output_2, file_output_1, file_output_2],
                     label="Character Examples",
-                    cache_examples=False
+                    cache_examples=True
                 )
 
         # Fourth row: Generate video button
