@@ -71,19 +71,22 @@ def get_motion_reps_tensor(motion_tensor, smplx_model, pose_fps=30, device='cuda
         "rep15d": rep15d,
     }
 
-device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
-smplx_model = smplx.create(
-    "./emage/smplx_models/",
-    model_type='smplx',
-    gender='NEUTRAL_2020',
-    use_face_contour=False,
-    num_betas=300,
-    num_expression_coeffs=100,
-    ext='npz',
-    use_pca=False,
-).to(device).eval()
+
 
 def get_motion_reps(motion, smplx_model=smplx_model, pose_fps=30):
+    device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
+    smplx_model = smplx.create(
+        "./emage/smplx_models/",
+        model_type='smplx',
+        gender='NEUTRAL_2020',
+        use_face_contour=False,
+        num_betas=300,
+        num_expression_coeffs=100,
+        ext='npz',
+        use_pca=False,
+    ).to(device).eval()
+    print("warning, smplx model is created inside fn for gradio")
+
     gt_motion_tensor = motion["poses"]
     n = gt_motion_tensor.shape[0]
     bs = 1
