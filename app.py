@@ -476,7 +476,6 @@ character_name_to_yaml = {
 
 cfg = prepare_all("./configs/gradio.yaml")
 seed_everything(cfg.seed)
-experiment_ckpt_dir = experiment_log_dir = os.path.join(cfg.output_dir, cfg.exp_name)
 
 smplx_model = smplx.create(
         "./emage/smplx_models/", 
@@ -501,7 +500,9 @@ state_dict = checkpoint['model_state_dict']
 model.load_state_dict(state_dict, strict=False)
 
 @spaces.GPU(duration=1000) 
-def tango(audio_path, character_name, create_graph=False, video_folder_path=None):
+def tango(audio_path, character_name, create_graph=False, video_folder_path=None, smplx_model=smplx_model, model=model, cfg=cfg):
+    
+    experiment_ckpt_dir = experiment_log_dir = os.path.join(cfg.output_dir, cfg.exp_name)
     saved_audio_path = "./saved_audio.wav"
     sample_rate, audio_waveform = audio_path 
     sf.write(saved_audio_path, audio_waveform, sample_rate)
@@ -563,8 +564,9 @@ examples_video = [
 ]
 
 combined_examples = [
-    [audio, video] for audio in examples_audio for video in examples_video
+    [audio[0], video[0]] for audio in examples_audio for video in examples_video
 ]
+
 def make_demo():
     with gr.Blocks(analytics_enabled=False) as Interface:
         # First row: Audio upload and Audio examples with adjusted ratio
@@ -664,6 +666,7 @@ def make_demo():
 
         with gr.Row():
             with gr.Column(scale=4):
+                print(combined_examples)
                 gr.Examples(
                     examples=combined_examples,
                     inputs=[audio_input, video_input],  # Both audio and video as inputs
