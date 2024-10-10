@@ -73,69 +73,69 @@ def get_motion_reps_tensor(motion_tensor, smplx_model, pose_fps=30, device='cuda
 
 
 
-def get_motion_reps(motion, smplx_model=smplx_model, pose_fps=30):
-    device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
-    smplx_model = smplx.create(
-        "./emage/smplx_models/",
-        model_type='smplx',
-        gender='NEUTRAL_2020',
-        use_face_contour=False,
-        num_betas=300,
-        num_expression_coeffs=100,
-        ext='npz',
-        use_pca=False,
-    ).to(device).eval()
-    print("warning, smplx model is created inside fn for gradio")
+# def get_motion_reps(motion, smplx_model=smplx_model, pose_fps=30):
+#     device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
+#     smplx_model = smplx.create(
+#         "./emage/smplx_models/",
+#         model_type='smplx',
+#         gender='NEUTRAL_2020',
+#         use_face_contour=False,
+#         num_betas=300,
+#         num_expression_coeffs=100,
+#         ext='npz',
+#         use_pca=False,
+#     ).to(device).eval()
+#     print("warning, smplx model is created inside fn for gradio")
 
-    gt_motion_tensor = motion["poses"]
-    n = gt_motion_tensor.shape[0]
-    bs = 1
-    gt_motion_tensor = torch.from_numpy(gt_motion_tensor).float().to(device).unsqueeze(0)
-    gt_motion_tensor_reshaped = gt_motion_tensor.reshape(bs * n, 165)
-    output = smplx_model(
-        betas=torch.zeros(bs * n, 300).to(device),
-        transl=torch.zeros(bs * n, 3).to(device),
-        expression=torch.zeros(bs * n, 100).to(device),
-        jaw_pose=torch.zeros(bs * n, 3).to(device),
-        global_orient=torch.zeros(bs * n, 3).to(device),
-        body_pose=gt_motion_tensor_reshaped[:, 3:21 * 3 + 3],
-        left_hand_pose=gt_motion_tensor_reshaped[:, 25 * 3:40 * 3],
-        right_hand_pose=gt_motion_tensor_reshaped[:, 40 * 3:55 * 3],
-        return_joints=True,
-        leye_pose=torch.zeros(bs * n, 3).to(device),
-        reye_pose=torch.zeros(bs * n, 3).to(device),
-    )
-    joints = output["joints"].detach().cpu().numpy().reshape(n, 127, 3)[:, :55, :]
-    dt = 1 / pose_fps
-    init_vel = (joints[1:2] - joints[0:1]) / dt
-    middle_vel = (joints[2:] - joints[:-2]) / (2 * dt)
-    final_vel = (joints[-1:] - joints[-2:-1]) / dt
-    vel = np.concatenate([init_vel, middle_vel, final_vel], axis=0)
-    position = joints
-    rot_matrices = rc.axis_angle_to_matrix(gt_motion_tensor.reshape(1, n, 55, 3))[0]
-    rot6d = rc.matrix_to_rotation_6d(rot_matrices).reshape(n, 55, 6).cpu().numpy()
+#     gt_motion_tensor = motion["poses"]
+#     n = gt_motion_tensor.shape[0]
+#     bs = 1
+#     gt_motion_tensor = torch.from_numpy(gt_motion_tensor).float().to(device).unsqueeze(0)
+#     gt_motion_tensor_reshaped = gt_motion_tensor.reshape(bs * n, 165)
+#     output = smplx_model(
+#         betas=torch.zeros(bs * n, 300).to(device),
+#         transl=torch.zeros(bs * n, 3).to(device),
+#         expression=torch.zeros(bs * n, 100).to(device),
+#         jaw_pose=torch.zeros(bs * n, 3).to(device),
+#         global_orient=torch.zeros(bs * n, 3).to(device),
+#         body_pose=gt_motion_tensor_reshaped[:, 3:21 * 3 + 3],
+#         left_hand_pose=gt_motion_tensor_reshaped[:, 25 * 3:40 * 3],
+#         right_hand_pose=gt_motion_tensor_reshaped[:, 40 * 3:55 * 3],
+#         return_joints=True,
+#         leye_pose=torch.zeros(bs * n, 3).to(device),
+#         reye_pose=torch.zeros(bs * n, 3).to(device),
+#     )
+#     joints = output["joints"].detach().cpu().numpy().reshape(n, 127, 3)[:, :55, :]
+#     dt = 1 / pose_fps
+#     init_vel = (joints[1:2] - joints[0:1]) / dt
+#     middle_vel = (joints[2:] - joints[:-2]) / (2 * dt)
+#     final_vel = (joints[-1:] - joints[-2:-1]) / dt
+#     vel = np.concatenate([init_vel, middle_vel, final_vel], axis=0)
+#     position = joints
+#     rot_matrices = rc.axis_angle_to_matrix(gt_motion_tensor.reshape(1, n, 55, 3))[0]
+#     rot6d = rc.matrix_to_rotation_6d(rot_matrices).reshape(n, 55, 6).cpu().numpy()
     
-    init_vel = (motion["poses"][1:2] - motion["poses"][0:1]) / dt
-    middle_vel = (motion["poses"][2:] - motion["poses"][:-2]) / (2 * dt)
-    final_vel = (motion["poses"][-1:] - motion["poses"][-2:-1]) / dt
-    angular_velocity = np.concatenate([init_vel, middle_vel, final_vel], axis=0).reshape(n, 55, 3)
+#     init_vel = (motion["poses"][1:2] - motion["poses"][0:1]) / dt
+#     middle_vel = (motion["poses"][2:] - motion["poses"][:-2]) / (2 * dt)
+#     final_vel = (motion["poses"][-1:] - motion["poses"][-2:-1]) / dt
+#     angular_velocity = np.concatenate([init_vel, middle_vel, final_vel], axis=0).reshape(n, 55, 3)
 
-    rep15d = np.concatenate([
-        position,
-        vel,
-        rot6d,
-        angular_velocity],
-        axis=2
-    ).reshape(n, 55*15)
-    return {
-        "position": position,
-        "velocity": vel,
-        "rotation": rot6d,
-        "axis_angle": motion["poses"],
-        "angular_velocity": angular_velocity,
-        "rep15d": rep15d,
-        "trans": motion["trans"]
-    }
+#     rep15d = np.concatenate([
+#         position,
+#         vel,
+#         rot6d,
+#         angular_velocity],
+#         axis=2
+#     ).reshape(n, 55*15)
+#     return {
+#         "position": position,
+#         "velocity": vel,
+#         "rotation": rot6d,
+#         "axis_angle": motion["poses"],
+#         "angular_velocity": angular_velocity,
+#         "rep15d": rep15d,
+#         "trans": motion["trans"]
+#     }
 
 def create_graph(json_path):
     fps = 30
