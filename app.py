@@ -580,42 +580,36 @@ combined_examples = [
 
 def make_demo():
     with gr.Blocks(analytics_enabled=False) as Interface:
-        # First row: Audio upload and Audio examples with adjusted ratio
         gr.Markdown(
-            """
-            <div align='center'> <h1> TANGO: Co-Speech Gesture Video Reenactment with Hierarchical Audio Motion Embedding and Diffusion Interpolation </span> </h1> \
-                        <h2 style='font-weight: 450; font-size: 1rem; margin: 0rem'>\
-                        <a href='https://h-liu1997.github.io/'>Haiyang Liu</a>, \
-                        <a href='https://yangxingchao.github.io/'>Xingchao Yang</a>, \
-                        <a href=''>Tomoya Akiyama</a>, \
-                        <a href='https://sky24h.github.io/'> Yuantian Huang</a>, \
-                        <a href=''>Qiaoge Li</a>, \
-                        <a href='https://www.tut.ac.jp/english/university/faculty/cs/164.html'>Shigeru Kuriyama</a>, \
-                        <a href='https://taketomitakafumi.sakura.ne.jp/web/en/'>Takafumi Taketomi</a>\
-                    </h2> \
-                    <a style='font-size:18px;color: #000000'>This is a preprint version, more details will be available at </a>\
-                    <a style='font-size:18px;color: #000000' href=''>[Github Repo]</a>\
-                        <a style='font-size:18px;color: #000000' href=''> [ArXiv] </a>\
-                        <a style='font-size:18px;color: #000000' href='https://pantomatrix.github.io/TANGO/'> [Project Page] </a> </div>
-                    </h2> \
-                    <a style='font-size:18px;color: #000000'>This is an open-source project supported by Hugging Face's free ZeroGPU. Runtime is limited to 300s, so it operates in low-quality mode. Some high-quality mode results are shown below. </a> </div>
-            """
+        """
+        <div style="display: flex; justify-content: center; align-items: center; text-align: center;">
+          <div>
+            <h1>TANGO</h1>
+            <span>Generating full-body talking videos from audio and reference video</span>
+            <h2 style='font-weight: 450; font-size: 1rem; margin: 0rem'>\
+              <a href='https://h-liu1997.github.io/'>Haiyang Liu</a>, \
+              <a href='https://yangxingchao.github.io/'>Xingchao Yang</a>, \
+              <a href=''>Tomoya Akiyama</a>, \
+              <a href='https://sky24h.github.io/'> Yuantian Huang</a>, \
+              <a href=''>Qiaoge Li</a>, \
+              <a href='https://www.tut.ac.jp/english/university/faculty/cs/164.html'>Shigeru Kuriyama</a>, \
+              <a href='https://taketomitakafumi.sakura.ne.jp/web/en/'>Takafumi Taketomi</a>\
+            </h2>
+            <br>
+            <div style="display: flex; justify-content: center; align-items: center; text-align: center;">
+              <a href="https://arxiv.org/abs/2410.04221"><img src="https://img.shields.io/badge/arXiv-2410.04221-blue"></a>
+              &nbsp;
+              <a href="https://pantomatrix.github.io/TANGO/"><img src="https://img.shields.io/badge/Project_Page-TANGO-orange" alt="Project Page"></a>
+              &nbsp;
+              <a href="https://github.com/CyberAgentAILab/TANGO"><img src="https://img.shields.io/badge/Github-Code-green"></a>
+              &nbsp;
+              <a href="https://github.com/CyberAgentAILab/TANGO"><img src="https://img.shields.io/github/stars/CyberAgentAILab/TANGO
+              "></a>
+            </div>
+          </div>
+        </div>
+        """
         )
-
-        # gr.Markdown("""
-        # <h4 style="text-align: left;">
-        # This demo is part of an open-source project supported by Hugging Face's free, zero-GPU runtime. Due to runtime cost considerations, it operates in low-quality mode. Some high-quality videos are shown below.
-
-        # Details of the low-quality mode:
-        # 1. Lower resolution.
-        # 2. More discontinuous frames (causing noticeable "frame jumps").
-        # 3. Utilizes open-source tools like SMPLerX-s-model, Wav2Lip, and FiLM for faster processing.
-        # 4. Accepts audio input of up to 8 seconds. If your input exceeds 8 seconds, only the first 8 seconds will be used.
-        # 5. You can provide a custom background video for your character, but it is limited to 20 seconds.
-
-        # Feel free to open an issue on GitHub or contact the authors if this does not meet your needs.
-        # </h4>
-        # """)
         
         # Create a gallery with 5 videos
         with gr.Row():
@@ -630,7 +624,15 @@ def make_demo():
             video3 = gr.Video(value="./datasets/cached_audio/demo7.mp4", label="Demo 7")
             video4 = gr.Video(value="./datasets/cached_audio/demo8.mp4", label="Demo 8")
             video5 = gr.Video(value="./datasets/cached_audio/demo9.mp4", label="Demo 9")
-
+        
+        with gr.Row():
+            gr.Markdown(
+              """
+              <div style="display: flex; justify-content: center; align-items: center; text-align: center;">
+              This is an open-source project supported by Hugging Face's free ZeroGPU. Runtime is limited to 300s, so it operates in low-quality mode. Some generated results from high-quality mode are shown above.
+              </div>
+              """
+            )
 
         with gr.Row():
             with gr.Column(scale=4):
@@ -650,20 +652,20 @@ def make_demo():
                 file_output_2 = gr.File(label="Download 3D Motion and Visualize in Blender")
                 gr.Markdown("""
                 <h4 style="text-align: left;">
-                <a style='font-size:18px;color: #000000'> Details of the low-quality mode: </a>
+                Details of the low-quality mode:
                 <br>
-                <a style='font-size:18px;color: #000000'> 1. Lower resolution.</a>
+                1. Lower resolution.
                 <br>
-                <a style='font-size:18px;color: #000000'> 2. More discontinuous graph nodes (causing noticeable "frame jumps"). </a>
+                2. More discontinuous graph nodes (causing noticeable "frame jumps"). 
                 <br>
-                <a style='font-size:18px;color: #000000'> 3. Utilizes open-source tools like SMPLerX-s-model, Wav2Lip, and FiLM for faster processing. </a>
+                3. Utilizes open-source tools like SMPLerX-s-model, Wav2Lip, and FiLM for faster processing. 
                 <br>
-                <a style='font-size:18px;color: #000000'> 4. only use first 8 seconds of your input audio.</a>
+                4. only use first 8 seconds of your input audio.
                 <br>
-                <a style='font-size:18px;color: #000000'> 5. custom character for a video up to 10 seconds. </a>
+                5. custom character for a video up to 10 seconds.
                 <br>
                 <br>
-                <a style='font-size:18px;color: #000000'> Feel free to open an issue on GitHub or contact the authors if this does not meet your needs.</a>
+                Feel free to open an issue on GitHub or contact the authors if this does not meet your needs.
                 </h4>
                 """)
             
@@ -701,17 +703,17 @@ def make_demo():
             outputs=[video_output_1, video_output_2, file_output_1, file_output_2]
         )
 
-        with gr.Row():
-            with gr.Column(scale=4):
-                print(combined_examples)
-                gr.Examples(
-                    examples=combined_examples,
-                    inputs=[audio_input, video_input, seed_input],  # Both audio and video as inputs
-                    outputs=[video_output_1, video_output_2, file_output_1, file_output_2],
-                    fn=tango,  # Function that processes both audio and video inputs
-                    label="Select Combined Audio and Video Examples (Cached)",
-                    cache_examples=True
-                )
+        # with gr.Row():
+        #     with gr.Column(scale=4):
+        #         print(combined_examples)
+        #         gr.Examples(
+        #             examples=combined_examples,
+        #             inputs=[audio_input, video_input, seed_input],  # Both audio and video as inputs
+        #             outputs=[video_output_1, video_output_2, file_output_1, file_output_2],
+        #             fn=tango,  # Function that processes both audio and video inputs
+        #             label="Select Combined Audio and Video Examples (Cached)",
+        #             cache_examples=True
+        #         )
 
     return Interface
       
