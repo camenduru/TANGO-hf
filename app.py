@@ -266,6 +266,14 @@ def test_fn(model, device, iteration, candidate_json_path, test_path, cfg, audio
         node["motion_low"] = motion_low_all[i]
 
     graph = graph_pruning(graph)
+    # for gradio, use a subgraph
+    if len(graph.vs) > 1800:
+        gap = len(graph.vs) - 1800
+        start_d = random.randint(0, 1800)
+        graph.delete_vertices(range(start_d, start_d + gap))
+    ascc_2 = graph.clusters(mode="STRONG")
+    graph = ascc_2.giant()
+
     # drop the id of gt
     idx = 0
     audio_waveform, sr = librosa.load(audio_path)
@@ -438,7 +446,7 @@ def prepare_all(yaml_name):
     return config
 
 
-def save_first_20_seconds(video_path, output_path="./save_video.mp4"):
+def save_first_10_seconds(video_path, output_path="./save_video.mp4"):
     import cv2
     cap = cv2.VideoCapture(video_path)
     
@@ -452,7 +460,7 @@ def save_first_20_seconds(video_path, output_path="./save_video.mp4"):
     fourcc = cv2.VideoWriter_fourcc(*'mp4v')
     out = cv2.VideoWriter(output_path, fourcc, fps, (width, height))
 
-    frames_to_save = fps * 20
+    frames_to_save = fps * 10
     frame_count = 0
     
     while cap.isOpened() and frame_count < frames_to_save:
@@ -475,7 +483,6 @@ character_name_to_yaml = {
 }
 
 cfg = prepare_all("./configs/gradio.yaml")
-seed_everything(cfg.seed)
 
 smplx_model = smplx.create(
         "./emage/smplx_models/", 
@@ -499,9 +506,10 @@ state_dict = checkpoint['model_state_dict']
 # new_state_dict = {k.replace('module.', ''): v for k, v in state_dict.items()}
 model.load_state_dict(state_dict, strict=False)
 
-@spaces.GPU(duration=1000) 
-def tango(audio_path, character_name, create_graph=False, video_folder_path=None, smplx_model=smplx_model, model=model, cfg=cfg):
-    
+@spaces.GPU(duration=299) 
+def tango(audio_path, character_name, seed, create_graph=False, video_folder_path=None, smplx_model=smplx_model, model=model, cfg=cfg):
+    cfg.seed = seed
+    seed_everything(cfg.seed)
     experiment_ckpt_dir = experiment_log_dir = os.path.join(cfg.output_dir, cfg.exp_name)
     saved_audio_path = "./saved_audio.wav"
     sample_rate, audio_waveform = audio_path 
@@ -523,7 +531,7 @@ def tango(audio_path, character_name, create_graph=False, video_folder_path=None
         create_graph=True
         # load video, and save it to "./save_video.mp4 for the first 20s of the video."
         os.makedirs("./outputs/tmpvideo/", exist_ok=True)
-        save_first_20_seconds(character_name, "./outputs/tmpvideo/save_video.mp4")
+        save_first_10_seconds(character_name, "./outputs/tmpvideo/save_video.mp4")
 
     if create_graph:
         video_folder_path = "./outputs/tmpvideo/"
@@ -564,7 +572,7 @@ examples_video = [
 ]
 
 combined_examples = [
-    [audio[0], video[0]] for audio in examples_audio for video in examples_video
+    [audio[0], video[0], 2024] for audio in examples_audio for video in examples_video
 ]
 
 def make_demo():
@@ -589,21 +597,20 @@ def make_demo():
             """
         )
 
-        with gr.Row():
-            gr.Markdown("""
-            <h4 style="text-align: left;">
-            This demo is part of an open-source project supported by Hugging Face's free, zero-GPU runtime. Due to runtime cost considerations, it operates in low-quality mode. Some high-quality videos are shown below.
+        gr.Markdown("""
+        <h4 style="text-align: left;">
+        This demo is part of an open-source project supported by Hugging Face's free, zero-GPU runtime. Due to runtime cost considerations, it operates in low-quality mode. Some high-quality videos are shown below.
 
-            Details of the low-quality mode:
-            1. Lower resolution.
-            2. More discontinuous frames (causing noticeable "frame jumps").
-            3. Utilizes open-source tools like SMPLerX-s-model, Wav2Lip, and FiLM for faster processing.
-            4. Accepts audio input of up to 8 seconds. If your input exceeds 8 seconds, only the first 8 seconds will be used.
-            5. You can provide a custom background video for your character, but it is limited to 20 seconds.
+        Details of the low-quality mode:
+        1. Lower resolution.
+        2. More discontinuous frames (causing noticeable "frame jumps").
+        3. Utilizes open-source tools like SMPLerX-s-model, Wav2Lip, and FiLM for faster processing.
+        4. Accepts audio input of up to 8 seconds. If your input exceeds 8 seconds, only the first 8 seconds will be used.
+        5. You can provide a custom background video for your character, but it is limited to 20 seconds.
 
-            Feel free to open an issue on GitHub or contact the authors if this does not meet your needs.
-            </h4>
-            """)
+        Feel free to open an issue on GitHub or contact the authors if this does not meet your needs.
+        </h4>
+        """)
         
         # Create a gallery with 5 videos
         with gr.Row():
@@ -652,6 +659,8 @@ def make_demo():
                     label="Character Examples",
                     cache_examples=False
                 )
+        with gr.Row():
+            seed_input = gr.Number(label="Seed", value=2024, interactive=True)
 
         # Fourth row: Generate video button
         with gr.Row():
@@ -660,7 +669,7 @@ def make_demo():
         # Define button click behavior
         run_button.click(
             fn=tango,
-            inputs=[audio_input, video_input],
+            inputs=[audio_input, video_input, seed_input],
             outputs=[video_output_1, video_output_2, file_output_1, file_output_2]
         )
 
@@ -669,7 +678,7 @@ def make_demo():
                 print(combined_examples)
                 gr.Examples(
                     examples=combined_examples,
-                    inputs=[audio_input, video_input],  # Both audio and video as inputs
+                    inputs=[audio_input, video_input, seed_input],  # Both audio and video as inputs
                     outputs=[video_output_1, video_output_2, file_output_1, file_output_2],
                     fn=tango,  # Function that processes both audio and video inputs
                     label="Select Combined Audio and Video Examples (Cached)",
