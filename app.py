@@ -562,6 +562,9 @@ examples_video = [
     ["./datasets/cached_audio/101099-00_18_09-00_18_19.mp4"],
 ]
 
+combined_examples = [
+    [audio, video] for audio in examples_audio for video in examples_video
+]
 def make_demo():
     with gr.Blocks(analytics_enabled=False) as Interface:
         # First row: Audio upload and Audio examples with adjusted ratio
@@ -635,7 +638,7 @@ def make_demo():
                     inputs=[audio_input],
                     outputs=[video_output_1, video_output_2, file_output_1, file_output_2],
                     label="Select existing Audio examples",
-                    cache_examples=True
+                    cache_examples=False
                 )
             with gr.Column(scale=1):
                 video_input = gr.Video(label="Your Character", elem_classes="video")
@@ -645,7 +648,7 @@ def make_demo():
                     inputs=[video_input],  # Correctly refer to video input
                     outputs=[video_output_1, video_output_2, file_output_1, file_output_2],
                     label="Character Examples",
-                    cache_examples=True
+                    cache_examples=False
                 )
 
         # Fourth row: Generate video button
@@ -658,6 +661,17 @@ def make_demo():
             inputs=[audio_input, video_input],
             outputs=[video_output_1, video_output_2, file_output_1, file_output_2]
         )
+
+        with gr.Row():
+            with gr.Column(scale=4):
+                gr.Examples(
+                    examples=combined_examples,
+                    inputs=[audio_input, video_input],  # Both audio and video as inputs
+                    outputs=[video_output_1, video_output_2, file_output_1, file_output_2],
+                    fn=tango,  # Function that processes both audio and video inputs
+                    label="Select Combined Audio and Video Examples (Cached)",
+                    cache_examples=True
+                )
 
     return Interface
       
