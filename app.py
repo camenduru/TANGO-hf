@@ -482,32 +482,9 @@ character_name_to_yaml = {
   "101099-00_18_09-00_18_19.mp4": "./datasets/data_json/show_oliver_test/Stupid_Watergate_-_Last_Week_Tonight_with_John_Oliver_HBO-FVFdsl29s_Q.mkv.json",
 }
 
-cfg = prepare_all("./configs/gradio.yaml")
-
-smplx_model = smplx.create(
-        "./emage/smplx_models/", 
-        model_type='smplx',
-        gender='NEUTRAL_2020', 
-        use_face_contour=False,
-        num_betas=300,
-        num_expression_coeffs=100, 
-        ext='npz',
-        use_pca=False,
-    )
-model = init_class(cfg.model.name_pyfile, cfg.model.class_name, cfg)
-for param in model.parameters():
-    param.requires_grad = False
-model.smplx_model = smplx_model
-model.get_motion_reps = get_motion_reps_tensor
-
-checkpoint_path = "./datasets/cached_ckpts/ckpt.pth"
-checkpoint = torch.load(checkpoint_path)
-state_dict = checkpoint['model_state_dict']
-# new_state_dict = {k.replace('module.', ''): v for k, v in state_dict.items()}
-model.load_state_dict(state_dict, strict=False)
-
-@spaces.GPU(duration=299) 
-def tango(audio_path, character_name, seed, create_graph=False, video_folder_path=None, smplx_model=smplx_model, model=model, cfg=cfg):
+@spaces.GPU(duration=240) 
+def tango(audio_path, character_name, seed, create_graph=False, video_folder_path=None):
+    cfg = prepare_all("./configs/gradio.yaml")
     cfg.seed = seed
     seed_everything(cfg.seed)
     experiment_ckpt_dir = experiment_log_dir = os.path.join(cfg.output_dir, cfg.exp_name)
@@ -542,13 +519,35 @@ def tango(audio_path, character_name, seed, create_graph=False, video_folder_pat
         os.system(f"python ./create_graph.py --json_save_path {json_save_path} --graph_save_path {graph_save_path}") 
         cfg.data.test_meta_paths = json_save_path
 
+    smplx_model = smplx.create(
+        "./emage/smplx_models/", 
+        model_type='smplx',
+        gender='NEUTRAL_2020', 
+        use_face_contour=False,
+        num_betas=300,
+        num_expression_coeffs=100, 
+        ext='npz',
+        use_pca=False,
+    )
+    model = init_class(cfg.model.name_pyfile, cfg.model.class_name, cfg)
+    for param in model.parameters():
+        param.requires_grad = False
+    model.smplx_model = smplx_model
+    model.get_motion_reps = get_motion_reps_tensor
+    
     local_rank = 0  
     torch.cuda.set_device(local_rank)
     device = torch.device("cuda", local_rank)
-    
+
     smplx_model = smplx_model.to(device).eval()
     model = model.to(device)
     model.smplx_model = model.smplx_model.to(device)
+
+    checkpoint_path = "./datasets/cached_ckpts/ckpt.pth"
+    checkpoint = torch.load(checkpoint_path)
+    state_dict = checkpoint['model_state_dict']
+    new_state_dict = {k.replace('module.', ''): v for k, v in state_dict.items()}
+    model.load_state_dict(new_state_dict, strict=False)
     
     test_path = os.path.join(experiment_ckpt_dir, f"test_{0}")
     os.makedirs(test_path, exist_ok=True)
@@ -572,7 +571,11 @@ examples_video = [
 ]
 
 combined_examples = [
-    [audio[0], video[0], 2024] for audio in examples_audio for video in examples_video
+    ["./datasets/cached_audio/example_male_voice_9_seconds.wav", "./datasets/cached_audio/speaker9_o7Ik1OB4TaE_00-00-38.15_00-00-42.33.mp4", 2024],
+    ["./datasets/cached_audio/example_male_voice_9_seconds.wav", "./datasets/cached_audio/speaker7_iuYlGRnC7J8_00-00-0.00_00-00-3.25.mp4", 2024],
+    ["./datasets/cached_audio/example_male_voice_9_seconds.wav", "./datasets/cached_audio/101099-00_18_09-00_18_19.mp4", 2024],
+    ["./datasets/cached_audio/example_female_voice_9_seconds.wav", "./datasets/cached_audio/1wrQ6Msp7wM_00-00-39.69_00-00-45.68.mp4", 2024],
+    ["./datasets/cached_audio/example_female_voice_9_seconds.wav", "./datasets/cached_audio/speaker8_jjRWaMCWs44_00-00-30.16_00-00-33.32.mp4", 2024],
 ]
 
 def make_demo():
@@ -594,31 +597,39 @@ def make_demo():
                     <a style='font-size:18px;color: #000000' href=''>[Github Repo]</a>\
                         <a style='font-size:18px;color: #000000' href=''> [ArXiv] </a>\
                         <a style='font-size:18px;color: #000000' href='https://pantomatrix.github.io/TANGO/'> [Project Page] </a> </div>
+                    </h2> \
+                    <a style='font-size:18px;color: #000000'>This is an open-source project supported by Hugging Face's free ZeroGPU. Runtime is limited to 300s, so it operates in low-quality mode. Some high-quality mode results are shown below. </a> </div>
             """
         )
 
-        gr.Markdown("""
-        <h4 style="text-align: left;">
-        This demo is part of an open-source project supported by Hugging Face's free, zero-GPU runtime. Due to runtime cost considerations, it operates in low-quality mode. Some high-quality videos are shown below.
+        # gr.Markdown("""
+        # <h4 style="text-align: left;">
+        # This demo is part of an open-source project supported by Hugging Face's free, zero-GPU runtime. Due to runtime cost considerations, it operates in low-quality mode. Some high-quality videos are shown below.
 
-        Details of the low-quality mode:
-        1. Lower resolution.
-        2. More discontinuous frames (causing noticeable "frame jumps").
-        3. Utilizes open-source tools like SMPLerX-s-model, Wav2Lip, and FiLM for faster processing.
-        4. Accepts audio input of up to 8 seconds. If your input exceeds 8 seconds, only the first 8 seconds will be used.
-        5. You can provide a custom background video for your character, but it is limited to 20 seconds.
+        # Details of the low-quality mode:
+        # 1. Lower resolution.
+        # 2. More discontinuous frames (causing noticeable "frame jumps").
+        # 3. Utilizes open-source tools like SMPLerX-s-model, Wav2Lip, and FiLM for faster processing.
+        # 4. Accepts audio input of up to 8 seconds. If your input exceeds 8 seconds, only the first 8 seconds will be used.
+        # 5. You can provide a custom background video for your character, but it is limited to 20 seconds.
 
-        Feel free to open an issue on GitHub or contact the authors if this does not meet your needs.
-        </h4>
-        """)
+        # Feel free to open an issue on GitHub or contact the authors if this does not meet your needs.
+        # </h4>
+        # """)
         
         # Create a gallery with 5 videos
         with gr.Row():
-            video1 = gr.Video(value="./datasets/cached_audio/demo1.mp4", label="Demo 1")
-            video2 = gr.Video(value="./datasets/cached_audio/demo2.mp4", label="Demo 2")
-            video3 = gr.Video(value="./datasets/cached_audio/demo3.mp4", label="Demo 3")
-            video4 = gr.Video(value="./datasets/cached_audio/demo4.mp4", label="Demo 4")
-            video5 = gr.Video(value="./datasets/cached_audio/demo5.mp4", label="Demo 5")
+            video1 = gr.Video(value="./datasets/cached_audio/demo1.mp4", label="Demo 0")
+            video2 = gr.Video(value="./datasets/cached_audio/demo2.mp4", label="Demo 1")
+            video3 = gr.Video(value="./datasets/cached_audio/demo3.mp4", label="Demo 2")
+            video4 = gr.Video(value="./datasets/cached_audio/demo4.mp4", label="Demo 3")
+            video5 = gr.Video(value="./datasets/cached_audio/demo5.mp4", label="Demo 4")
+        with gr.Row():
+            video1 = gr.Video(value="./datasets/cached_audio/demo6.mp4", label="Demo 5")
+            video2 = gr.Video(value="./datasets/cached_audio/demo0.mp4", label="Demo 6")
+            video3 = gr.Video(value="./datasets/cached_audio/demo7.mp4", label="Demo 7")
+            video4 = gr.Video(value="./datasets/cached_audio/demo8.mp4", label="Demo 8")
+            video5 = gr.Video(value="./datasets/cached_audio/demo9.mp4", label="Demo 9")
 
 
         with gr.Row():
@@ -635,12 +646,31 @@ def make_demo():
                             loop=False,
                             show_share_button=True)
             with gr.Column(scale=1):
-                file_output_1 = gr.File(label="Download Motion and Visualize in Blender")
-                file_output_2 = gr.File(label="Download Motion and Visualize in Blender")
+                file_output_1 = gr.File(label="Download 3D Motion and Visualize in Blender")
+                file_output_2 = gr.File(label="Download 3D Motion and Visualize in Blender")
+                gr.Markdown("""
+                <h4 style="text-align: left;">
+                <a style='font-size:18px;color: #000000'> Details of the low-quality mode: </a>
+                <br>
+                <a style='font-size:18px;color: #000000'> 1. Lower resolution.</a>
+                <br>
+                <a style='font-size:18px;color: #000000'> 2. More discontinuous graph nodes (causing noticeable "frame jumps"). </a>
+                <br>
+                <a style='font-size:18px;color: #000000'> 3. Utilizes open-source tools like SMPLerX-s-model, Wav2Lip, and FiLM for faster processing. </a>
+                <br>
+                <a style='font-size:18px;color: #000000'> 4. only use first 8 seconds of your input audio.</a>
+                <br>
+                <a style='font-size:18px;color: #000000'> 5. custom character for a video up to 10 seconds. </a>
+                <br>
+                <br>
+                <a style='font-size:18px;color: #000000'> Feel free to open an issue on GitHub or contact the authors if this does not meet your needs.</a>
+                </h4>
+                """)
             
         with gr.Row():
             with gr.Column(scale=1):
                 audio_input = gr.Audio(label="Upload your audio")
+                seed_input = gr.Number(label="Seed", value=2024, interactive=True)
             with gr.Column(scale=2):
                 gr.Examples(
                     examples=examples_audio,
@@ -659,9 +689,7 @@ def make_demo():
                     label="Character Examples",
                     cache_examples=False
                 )
-        with gr.Row():
-            seed_input = gr.Number(label="Seed", value=2024, interactive=True)
-
+        
         # Fourth row: Generate video button
         with gr.Row():
             run_button = gr.Button("Generate Video")
