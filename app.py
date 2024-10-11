@@ -482,7 +482,7 @@ character_name_to_yaml = {
   "101099-00_18_09-00_18_19.mp4": "./datasets/data_json/show_oliver_test/Stupid_Watergate_-_Last_Week_Tonight_with_John_Oliver_HBO-FVFdsl29s_Q.mkv.json",
 }
 
-@spaces.GPU(duration=240) 
+@spaces.GPU(duration=200) 
 def tango(audio_path, character_name, seed, create_graph=False, video_folder_path=None):
     cfg = prepare_all("./configs/gradio.yaml")
     cfg.seed = seed
