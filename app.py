@@ -1,4 +1,3 @@
-import spaces
 import os
 # os.environ["XDG_RUNTIME_DIR"] = "/content"
 # os.system("Xvfb :99 -ac &")
@@ -180,6 +179,7 @@ def search_path_dp(graph, audio_low_np, audio_high_np, loop_penalty=0.1, top_k=1
 def test_fn(model, device, iteration, candidate_json_path, test_path, cfg, audio_path, **kwargs):
     torch.set_grad_enabled(False)
     pool_path = candidate_json_path.replace("data_json", "cached_graph").replace(".json", ".pkl")
+    print(pool_path)
     graph = igraph.Graph.Read_Pickle(fname=pool_path)
     # print(len(graph.vs))
 
@@ -482,7 +482,6 @@ character_name_to_yaml = {
   "101099-00_18_09-00_18_19.mp4": "./datasets/data_json/show_oliver_test/Stupid_Watergate_-_Last_Week_Tonight_with_John_Oliver_HBO-FVFdsl29s_Q.mkv.json",
 }
 
-@spaces.GPU(duration=200) 
 def tango(audio_path, character_name, seed, create_graph=False, video_folder_path=None):
     cfg = prepare_all("./configs/gradio.yaml")
     cfg.seed = seed
@@ -718,9 +717,9 @@ def make_demo():
     return Interface
       
 if __name__ == "__main__":
-    os.environ["MASTER_ADDR"]='127.0.0.1'
+    os.environ["MASTER_ADDR"]='0.0.0.0'
     os.environ["MASTER_PORT"]='8675'
     # #os.environ["TORCH_DISTRIBUTED_DEBUG"] = "DETAIL"
 
     demo = make_demo()
-    demo.launch(share=True)
+    demo.queue().launch(inline=False, share=True, debug=True)
